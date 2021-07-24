@@ -8,7 +8,7 @@ import getPageTitle from '@/utils/get-page-title'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
-const whiteList = ['/login'] // no redirect whitelist
+const whiteList = ['/login', '/auth-redirect'] // no redirect whitelist
 
 router.beforeEach(async (to, from, next) => {
     // start progress bar
@@ -26,18 +26,17 @@ router.beforeEach(async (to, from, next) => {
             next({ path: '/' })
             NProgress.done()
         } else {
-            const hasGetUserInfo = store.getters.name
-            if (hasGetUserInfo) {
+            const hasRoles = store.getters.roles && store.getters.roles.length > 0
+            if (hasRoles) {
                 next()
             } else {
                 try {
                     // get user info
-                    if (store.getters.routes.length === 0) {
-                        const { roles } = await store.dispatch('user/getInfo')
-                        const accessRoutes = await store.dispatch('permission/generateRoutes', roles)
-                        router.addRoutes(accessRoutes)
-                        next()
-                    }
+                    const data = await store.dispatch('user/getInfo')
+                    const roles = data.roles
+                    const accessRoutes = await store.dispatch('permission/generateRoutes', roles)
+                    router.addRoutes(accessRoutes)
+                    next({ ...to, replace: true }) // hack方法 确保addRoutes已完成
                 } catch (error) {
                     // remove token and go to login page to re-login
                     await store.dispatch('user/resetToken')

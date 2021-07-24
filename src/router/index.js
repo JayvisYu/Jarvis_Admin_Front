@@ -53,6 +53,11 @@ export const constantRoutes = [
         component: () => import('@/views/login/index'),
         hidden: true
     },
+    {
+        path: '/auth-redirect',
+        component: () => import('@/views/login/auth-redirect'),
+        hidden: true
+    },
     // 404路由
     {
         path: '/404',
@@ -72,7 +77,7 @@ export const constantRoutes = [
             path: 'dashboard',
             name: 'Dashboard',
             component: () => import('@/views/dashboard/index'),
-            meta: { title: 'Dashboard', icon: 'dashboard' }
+            meta: { title: '首页', icon: 'dashboard' }
         }]
     },
 
@@ -86,32 +91,68 @@ export const constantRoutes = [
             path: 'index',
             component: () => import('@/views/profile/index'),
             name: 'Profile',
-            meta: { title: 'Profile', icon: 'user', noCache: true }
-        }]
-    }
-]
-
-export const asyncRoutes = [{
-        path: 'external-link',
-        component: Layout,
-        meta: { roles: ['admin'] },
-        children: [{
-            path: 'https://panjiachen.github.io/vue-element-admin-site/#/',
-            meta: {
-                title: 'External Link',
-                icon: 'link',
-                noCache: true
-            }
+            meta: { title: '关于我', icon: 'user', noCache: true }
         }]
     },
+    // 404 page must be placed at the end !!!
+    { path: '*', redirect: '/404', hidden: true }
+]
+
+export const asyncRoutes = [
     /** when your routing map is too long, you can split it into small modules **/
     // componentsRouter,
     // chartsRouter,
     // nestedRouter,
     // tableRouter,
-
-    // 404 page must be placed at the end !!!
-    { path: '*', redirect: '/404', hidden: true }
+    {
+        path: '/article',
+        component: Layout,
+        redirect: '/article/list',
+        name: 'Article',
+        meta: {
+            title: '文章',
+            icon: 'el-icon-document',
+            roles: ['admin', 'editor']
+        },
+        alwaysShow: true,
+        children: [{
+                path: 'create',
+                component: () => import('@/views/article/create'),
+                name: 'CreateArticle',
+                meta: {
+                    title: '创建文章',
+                    icon: 'edit',
+                    roles: ['admin']
+                }
+            },
+            {
+                path: 'edit/:id(\\d+)',
+                component: () => import('@/views/article/edit'),
+                name: 'EditArticle',
+                meta: { title: '修改文章', icon: 'edit', roles: ['admin'], noCache: true, activeMenu: '/article/list' },
+                hidden: true
+            },
+            {
+                path: 'list',
+                component: () => import('@/views/article/list'),
+                name: 'ArticleList',
+                meta: { title: '文章列表', icon: 'list', roles: ['admin', 'editor'] },
+            }
+        ]
+    },
+    // {
+    //     path: 'external-link',
+    //     component: Layout,
+    //     meta: { roles: ['admin'] },
+    //     children: [{
+    //         path: 'https://panjiachen.github.io/vue-element-admin-site/#/',
+    //         meta: {
+    //             title: 'External Link',
+    //             icon: 'link',
+    //             noCache: true
+    //         }
+    //     }]
+    // },
 ]
 
 const createRouter = () => new Router({
