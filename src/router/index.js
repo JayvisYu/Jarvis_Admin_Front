@@ -94,8 +94,6 @@ export const constantRoutes = [
             meta: { title: '关于我', icon: 'user', noCache: true }
         }]
     },
-    // 404 page must be placed at the end !!!
-    { path: '*', redirect: '/404', hidden: true }
 ]
 
 export const asyncRoutes = [
@@ -140,6 +138,8 @@ export const asyncRoutes = [
             }
         ]
     },
+    // 404 page must be placed at the end !!!
+    { path: '*', redirect: '/404', hidden: true }
     // {
     //     path: 'external-link',
     //     component: Layout,
