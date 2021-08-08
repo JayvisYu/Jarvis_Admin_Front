@@ -21,7 +21,7 @@
 								name="name"
 								required
 							>
-								标题
+								Title
 							</MDinput>
 						</el-form-item>
 
@@ -244,12 +244,9 @@ export default {
 	created () {
 		if (this.isEdit) {
 			const id = this.$route.params && this.$route.params.id
-			this.fetchData(id)
+			console.log(id)
+			this.fetchEditData(id)
 		}
-
-		// Why need to make a copy of this.$route here?
-		// Because if you enter this page and quickly switch tag, may be in the execution of the setTagsViewTitle function, this.$route is no longer pointing to the current page
-		// https://github.com/PanJiaChen/vue-element-admin/issues/1221
 		this.tempRoute = Object.assign({}, this.$route)
 	},
 	methods: {
@@ -270,6 +267,33 @@ export default {
 				console.log(err)
 			})
 		},
+		// 获取修改文章信息
+		fetchEditData (id) {
+			Axios({
+				url: '/get_detail_data',
+				method: 'get',
+				params: { id }
+			}).then(res => {
+				console.log(res);
+				if (res.code === 200) {
+					this.postForm = res.data.result_dict
+
+					// just for test
+					this.postForm.title = res.data.result_dict.title
+					this.postForm.content_short = res.data.result_dict.content_short
+					this.postForm.display_time = res.data.result_dict.timestamp
+					// set tagsview title
+					this.setTagsViewTitle()
+
+					// set page title
+					this.setPageTitle()
+				} else {
+
+				}
+			}).catch(err => {
+				console.log(err);
+			})
+		},
 		setTagsViewTitle () {
 			const title = 'Edit Article'
 			const route = Object.assign({}, this.tempRoute, { title: `${title}-${this.postForm.id}` })
@@ -280,22 +304,39 @@ export default {
 			document.title = `${title} - ${this.postForm.id}`
 		},
 		submitForm () {
-			console.log(this.postForm)
-			this.$refs.postForm.validate(valid => {
-				if (valid) {
-					this.loading = true
-					this.$notify({
-						title: '成功',
-						message: '发布文章成功',
+			if (this.postForm.content.length === 0 || this.postForm.title.length === 0) {
+				this.$message({
+					message: '请填写必要的标题和内容',
+					type: 'warning'
+				})
+				return
+			}
+			this.postForm.status = 'published'
+			Axios({
+				url: '/post_article_form',
+				method: 'post',
+				data: this.postForm
+			}).then(res => {
+				console.log(res);
+				if (res.code === 200) {
+					this.$message({
+						message: '保存成功',
 						type: 'success',
-						duration: 2000
+						showClose: true,
+						duration: 1000
 					})
-					this.postForm.status = 'published'
-					this.loading = false
 				} else {
-					console.log('error submit!!')
-					return false
+					this.$message({
+						message: '保存失败, 请重试',
+						type: 'error',
+						showClose: true,
+						duration: 1000
+					})
 				}
+				this.postForm = Object.assign({}, defaultForm)
+				this.$refs.editor.setContent("");
+			}).catch(err => {
+				console.log(err);
 			})
 		},
 		draftForm () {
@@ -307,14 +348,13 @@ export default {
 				return
 			}
 			this.postForm.status = 'draft'
-			// console.log(this.postForm)
 			Axios({
 				url: '/post_article_form',
 				method: 'post',
 				data: this.postForm
 			}).then(res => {
 				console.log(res);
-				if (res.data.msg === 'success') {
+				if (res.code === 200) {
 					this.$message({
 						message: '保存成功',
 						type: 'success',
