@@ -10,7 +10,7 @@ import Layout from '@/layout'
 // import componentsRouter from './modules/components'
 // import chartsRouter from './modules/charts'
 // import tableRouter from './modules/table'
-// import nestedRouter from './modules/nested'
+import nestedRouter from './modules/nested'
 
 /**
  * Note: sub-menu only appear when route children.length >= 1
@@ -37,6 +37,18 @@ import Layout from '@/layout'
  * all roles can be accessed
  */
 export const constantRoutes = [
+    // 首页路由
+    {
+        path: '/',
+        component: Layout,
+        redirect: '/dashboard',
+        children: [{
+            path: 'dashboard',
+            name: 'Dashboard',
+            component: () => import('@/views/dashboard/index'),
+            meta: { title: '首页', icon: 'el-icon-discover' }
+        }]
+    },
     // 重定向路由
     {
         path: '/redirect',
@@ -68,18 +80,6 @@ export const constantRoutes = [
         component: () => import('@/views/error-page/401'),
         hidden: true
     },
-    // 首页路由
-    {
-        path: '/',
-        component: Layout,
-        redirect: '/dashboard',
-        children: [{
-            path: 'dashboard',
-            name: 'Dashboard',
-            component: () => import('@/views/dashboard/index'),
-            meta: { title: '首页', icon: 'dashboard' }
-        }]
-    },
 
     // 个人介绍
     {
@@ -103,14 +103,114 @@ export const asyncRoutes = [
     // nestedRouter,
     // tableRouter,
     {
+        path: '/stock',
+        component: Layout,
+        redirect: '/stock/select',
+        name: 'Stock',
+        meta: {
+            title: '股票板块',
+            icon: 'el-icon-collection',
+            roles: ['super_admin', 'admin', 'editor', 'visitor']
+        },
+        alwaysShow: true,
+        children: [{
+                path: 'select',
+                component: () => import('@/views/stock/select'),
+                name: 'SelectStock',
+                meta: {
+                    title: '选股策略',
+                    icon: 'el-icon-sunny',
+                    roles: ['super_admin', 'admin', 'editor', 'visitor']
+                },
+            },
+            {
+                path: 'select/:EName',
+                component: () => import('@/views/stock/select_stock'),
+                name: 'select_stock',
+                meta: { title: '策略详情', noCache: true, activeMenu: '/stock/select' },
+                hidden: true
+            },
+            {
+                path: 'timing',
+                component: () => import('@/views/stock/timing'),
+                name: 'StockSelectTiming',
+                meta: {
+                    title: '股票择时策略',
+                    icon: 'el-icon-moon',
+                    roles: ['super_admin', 'admin', 'editor', 'visitor']
+                }
+            },
+            {
+                path: 'timing/:EName',
+                component: () => import('@/views/stock/stock_timing'),
+                name: 'stock_timing',
+                meta: { title: '策略详情', noCache: true, activeMenu: '/stock/timing' },
+                hidden: true
+            },
+        ]
+    },
+    {
+        path: '/option',
+        component: Layout,
+        redirect: '/option/select',
+        name: 'Option',
+        meta: {
+            title: '期权板块',
+            icon: 'el-icon-ship',
+            roles: ['super_admin', 'admin']
+        },
+        alwaysShow: true,
+        children: [{
+            path: 'timing',
+            component: () => import('@/views/option/timing'),
+            name: 'SelectTiming',
+            meta: {
+                title: '期权择时策略',
+                icon: 'el-icon-moon',
+                roles: ['super_admin', 'admin']
+            }
+        }]
+    },
+    {
+        path: '/digital_currency',
+        component: Layout,
+        redirect: '/digital_currency/timing',
+        name: 'digitalCurrency',
+        meta: {
+            title: '数字货币板块',
+            icon: 'el-icon-trophy',
+            roles: ['super_admin']
+        },
+        alwaysShow: true,
+        children: [{
+            path: 'timing',
+            component: () => import('@/views/digital_currency/timing'),
+            name: 'CoinSelectTiming',
+            meta: {
+                title: '数字货币择时策略',
+                icon: 'el-icon-moon',
+                roles: ['super_admin']
+            }
+        }, {
+            path: 'real_exchange',
+            component: () => import('@/views/digital_currency/real_exchange'),
+            name: 'RealExchange',
+            meta: {
+                title: '实盘监控',
+                icon: 'el-icon-coordinate',
+                roles: ['super_admin']
+            }
+        }, ]
+    },
+    {
         path: '/article',
         component: Layout,
         redirect: '/article/list',
         name: 'Article',
         meta: {
-            title: '文章',
+            title: '量化精选文集',
             icon: 'el-icon-document',
-            roles: ['admin', 'editor']
+            roles: ['super_admin', 'admin', 'editor']
         },
         alwaysShow: true,
         children: [{
@@ -120,39 +220,60 @@ export const asyncRoutes = [
                 meta: {
                     title: '创建文章',
                     icon: 'edit',
-                    roles: ['admin']
+                    roles: ['super_admin', 'admin', 'editor']
                 }
             },
             {
                 path: 'edit/:id(\\d+)',
                 component: () => import('@/views/article/edit'),
                 name: 'EditArticle',
-                meta: { title: '修改文章', icon: 'edit', roles: ['admin'], noCache: true, activeMenu: '/article/list' },
+                meta: { title: '修改文章', icon: 'edit', roles: ['super_admin', 'admin'], noCache: true, activeMenu: '/article/list' },
                 hidden: true
             },
             {
                 path: 'list',
                 component: () => import('@/views/article/list'),
                 name: 'ArticleList',
-                meta: { title: '文章列表', icon: 'list', roles: ['admin', 'editor'] },
+                meta: { title: '文章列表', icon: 'list', roles: ['super_admin', 'admin', 'editor', 'visitor'] },
             }
+        ]
+    },
+    {
+        path: '/setting',
+        component: Layout,
+        redirect: '/setting/role',
+        name: 'Setting',
+        meta: {
+            title: '管理中心',
+            icon: 'el-icon-setting',
+            roles: ['super_admin', 'admin']
+        },
+        alwaysShow: true,
+        children: [{
+                path: 'role',
+                component: () => import('@/views/setting/role'),
+                name: 'RoleSetting',
+                meta: {
+                    title: '角色管理',
+                    icon: 'edit',
+                    roles: ['super_admin', 'admin']
+                }
+            },
+            {
+                path: 'index',
+                component: () => import('@/views/profile/index'),
+                name: 'OwnProfile',
+                meta: {
+                    title: '个人中心',
+                    icon: 'user',
+                    roles: ['super_admin', 'admin'],
+                    noCache: true
+                }
+            },
         ]
     },
     // 404 page must be placed at the end !!!
     { path: '*', redirect: '/404', hidden: true }
-    // {
-    //     path: 'external-link',
-    //     component: Layout,
-    //     meta: { roles: ['admin'] },
-    //     children: [{
-    //         path: 'https://panjiachen.github.io/vue-element-admin-site/#/',
-    //         meta: {
-    //             title: 'External Link',
-    //             icon: 'link',
-    //             noCache: true
-    //         }
-    //     }]
-    // },
 ]
 
 const createRouter = () => new Router({

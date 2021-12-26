@@ -6,7 +6,7 @@ import { Notification } from 'element-ui'
 const getDefaultState = () => {
     return {
         token: getToken(),
-        name: '',
+        email: '',
         avatar: '',
         introduction: '',
         roles: [],
@@ -22,11 +22,11 @@ const mutations = {
     SET_TOKEN: (state, token) => {
         state.token = token
     },
+    SET_EMAIL: (state, email) => {
+        state.email = email
+    },
     SET_ROLES: (state, roles) => {
         state.roles = roles
-    },
-    SET_NAME: (state, name) => {
-        state.name = name
     },
     SET_AVATAR: (state, avatar) => {
         state.avatar = avatar
@@ -42,9 +42,9 @@ const actions = {
         const { username, password } = userInfo
         return new Promise((resolve, reject) => {
             login({ username: username.trim(), password: password }).then(response => {
-                // console.log(response)
-                commit('SET_TOKEN', response.data.token)
-                setToken(response.data.token)
+                console.log(response)
+                commit('SET_TOKEN', response.data.access_token)
+                setToken(response.data.access_token)
                 resolve()
             }).catch(error => {
                 // console.log('111', error);
@@ -69,10 +69,10 @@ const actions = {
                     title: '登陆成功',
                     message: '欢迎你,' + ' ' + data.username + '!'
                 })
-                const { roles, name, avatar, introduction } = data
-                // console.log('user.js', roles);
+                const { email, roles, avatar, introduction } = data
+                console.log('data', data);
+                commit('SET_EMAIL', email)
                 commit('SET_ROLES', roles)
-                commit('SET_NAME', name)
                 commit('SET_AVATAR', avatar)
                 commit('SET_INTRODUCTION', introduction)
                 resolve(data)

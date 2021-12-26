@@ -20,7 +20,7 @@ service.interceptors.request.use(
             // let each request carry token
             // ['X-Token'] is a custom headers key
             // please modify it according to the actual situation
-            // console.log(store.getters.token);
+            console.log(store.getters.token);
             config.headers['Authenticate'] = getToken()
         }
         return config
@@ -67,6 +67,11 @@ service.interceptors.response.use(
                     store.dispatch('user/resetToken').then(() => {
                         location.reload()
                     })
+                })
+            } else if (res.code == 401) {
+                Message({
+                    message: res.message || '获取数据失败',
+                    type: 'error',
                 })
             }
             return Promise.reject(new Error(res.message || 'Error'))

@@ -1,16 +1,23 @@
 <template>
 	<div class="dashboard-editor-container">
 		<github-corner class="github-corner" />
-		<div class="dashboard-text">{{ name }} 欢迎你!</div>
+		<div class="dashboard-text">{{ name }} 欢迎你!
+			<span v-permission="['super_admin']">1</span>
+			<span v-permission="['admin']">2</span>
+			<span v-permission="['editor']">3</span>
+			<span v-permission="['visitor']">4</span>
+		</div>
 	</div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import GithubCorner from '@/components/GithubCorner'
+import permission from '@/directive/permission/index.js' // 权限判断指令
 
 export default {
 	name: 'Dashboard',
+	directives: { permission },
 	components: {
 		GithubCorner
 	},

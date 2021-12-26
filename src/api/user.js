@@ -2,23 +2,25 @@ import request from '@/utils/request'
 
 export function login(data) {
     return request({
-        url: '/login',
+        url: '/user/login',
         method: 'post',
-        data
+        data,
+        // headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     })
 }
 
 export function getInfo(token) {
     return request({
-        url: '/info',
+        url: '/user/info',
         method: 'get',
         params: { token }
+
     })
 }
 
 export function logout() {
     return request({
-        url: '/logout',
+        url: '/user/logout',
         method: 'post'
     })
 }
@@ -26,7 +28,7 @@ export function logout() {
 
 export function getForm() {
     return request({
-        url: '/get_form',
+        url: '/user/get_form',
         method: 'get'
     })
 }

@@ -17,18 +17,23 @@
 					<span>{{ scope.row.id }}</span>
 				</template>
 			</el-table-column>
-
 			<el-table-column
-				width="300"
+				min-width="200px"
+				label="Title"
 				align="center"
-				label="Date"
 			>
+				<!-- <template slot-scope="{row}">
+					<router-link
+						:to="'/article/edit/'+row.id"
+						class="link-type"
+					>
+						<span>{{ row.title }}</span>
+					</router-link>
+				</template> -->
 				<template slot-scope="scope">
-					<!-- <span>{{ scope.row.timestamp | parseTime('{y}-{m}-{d} {h}:{i}') }}</span> -->
-					<span>{{ scope.row.timestamp }}</span>
+					<span>{{ scope.row.title }}</span>
 				</template>
 			</el-table-column>
-
 			<el-table-column
 				width="160px"
 				align="center"
@@ -38,7 +43,6 @@
 					<span>{{ scope.row.author }}</span>
 				</template>
 			</el-table-column>
-
 			<el-table-column
 				width="150"
 				align="center"
@@ -46,18 +50,17 @@
 			>
 				<template slot-scope="scope">
 					<svg-icon
-						v-for="n in +scope.row.importance"
+						v-for="n in + scope.row.importance"
 						:key="n"
 						icon-class="star"
 						class="meta-item__icon"
 					/>
 				</template>
 			</el-table-column>
-
 			<el-table-column
 				class-name="status-col"
 				label="Status"
-				width="140"
+				width="100"
 				align="center"
 			>
 				<template slot-scope="{row}">
@@ -66,98 +69,65 @@
 					</el-tag>
 				</template>
 			</el-table-column>
-
 			<el-table-column
-				min-width="350px"
-				label="Title"
+				width="200"
 				align="center"
-			>
-				<template slot-scope="{row}">
-					<router-link
-						:to="'/article/edit/'+row.id"
-						class="link-type"
-					>
-						<span>{{ row.title }}</span>
-					</router-link>
-				</template>
-			</el-table-column>
-			<el-table-column
-				align="center"
-				label="Actions"
-				width="300"
+				label="Date"
 			>
 				<template slot-scope="scope">
-					<el-row v-permission="['admin']">
-						<el-col
-							:span="8"
-							:offset="0"
-						>
-							<el-button
-								type="primary"
-								size="mini"
-								icon="el-icon-document"
-								@click="getDetailData(scope.row)"
-							>
-								查看
-							</el-button>
-						</el-col>
-						<el-col
-							:span="8"
-							:offset="0"
-						>
-            <router-link :to="'/article/edit/'+ scope.row.id">
-							<el-button
-								type="warning"
-								size="mini"
-								icon="el-icon-edit"
-							>
-								修改
-							</el-button>
-            </router-link>
-						</el-col>
-						<el-col
-							:span="8"
-							:offset="0"
-						>
-							<el-button
-								type="danger"
-								size="mini"
-								icon="el-icon-delete"
-								@click="deleteData(scope.row.id)"
-							>
-								删除
-							</el-button>
-						</el-col>
-					</el-row>
-					<el-row v-permission="['editor']">
-						<el-col
-							:span="24"
-							:offset="0"
-						>
-							<el-button
-								type="primary"
-								size="mini"
-								icon="el-icon-document"
-								@click="getDetailData(scope.row)"
-							>
-								查看
-							</el-button>
-						</el-col>
-					</el-row>
+					<span>{{ scope.row.timestamp.replace('T', ' ') }}</span>
 				</template>
 			</el-table-column>
-
+			<template>
+				<el-table-column
+					align="center"
+					label="Actions"
+					width="200"
+				>
+					<template slot-scope="scope">
+						<el-row>
+							<el-col
+								:span="12"
+								:offset="0"
+							>
+								<el-button
+									type="primary"
+									size="mini"
+									icon="el-icon-edit"
+									@click="getDetailData(scope.row)"
+								>
+									编辑
+								</el-button>
+							</el-col>
+							<el-col
+								:span="12"
+								:offset="0"
+							>
+								<el-button
+									type="danger"
+									size="mini"
+									icon="el-icon-delete"
+									@click="deleteData(scope.row.uuid)"
+								>
+									删除
+								</el-button>
+							</el-col>
+						</el-row>
+					</template>
+				</el-table-column>
+			</template>
 		</el-table>
 
-		<pagination
-			v-show="total>0"
+		<el-pagination
+			@size-change="handleSizeChange"
+			@current-change="handleCurrentChange"
+			:current-page="page"
+			:page-sizes="[5, 10, 15, 20]"
+			:page-size="limit"
+			layout="total, sizes, prev, pager, next, jumper"
 			:total="total"
-			:page.sync="listQuery.page"
-			:limit.sync="listQuery.limit"
-			:page-sizes="[10, 20, 30, 50]"
-			:page-size="20"
-			@pagination="getList"
-		/>
+		>
+		</el-pagination>
 
 		<!-- 文章详情 -->
 		<el-dialog
@@ -272,6 +242,10 @@
 				slot="footer"
 				class="dialog-footer"
 			>
+				<el-button
+					@click="submitDetailForm"
+					type="primary"
+				>提 交</el-button>
 				<el-button @click="detailArticleVisible = false">返 回</el-button>
 			</span>
 		</el-dialog>
@@ -280,7 +254,9 @@
 
 <script>
 import permission from '@/directive/permission/index.js' // 权限判断指令
+import checkPermission from '@/utils/permission' // 权限判断函数
 import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
+import { Notification } from 'element-ui'
 import { Axios } from '@/api/axios'
 import Tinymce from '@/components/Tinymce'
 import Upload from '@/components/Upload/SingleImage3'
@@ -306,10 +282,8 @@ export default {
 			list: null,
 			total: 0,
 			listLoading: true,
-			listQuery: {
-				page: 1,
-				limit: 20
-			},
+			page: 1,
+			limit: 10,
 			detailArticleVisible: false,
 			detailForm: {},
 		}
@@ -319,34 +293,81 @@ export default {
 			return this.detailForm.content_short.length
 		},
 	},
+	watch: {
+		'$route': "getList"
+	},
 	created () {
-		this.getList()
+		this.getList();
+	},
+	mounted () {
+
 	},
 	methods: {
+		checkPermission,
 		getList () {
 			this.listLoading = true
 			Axios({
-				url: '/get_article_list',
-				method: 'post',
-				data: this.listQuery
+				url: '/article/get_article_list',
+				method: 'get',
+				params: { limit: this.limit, page: this.page }
 			}).then(res => {
 				console.log(res);
 				if (res.code === 200) {
-					this.$message({
-						message: '获取数据成功',
-						type: 'success',
-						showClose: true,
-						duration: 1000
-					})
 					this.list = res.data.article_list
 					this.total = res.data.total
 					this.listLoading = false
 				} else {
-					this.$message({
-						message: '获取数据失败',
-						type: 'error',
-						showClose: true,
-						duration: 1000
+					Notification.error({
+						title: '失败',
+						message: '获取文章列表失败!'
+					})
+					this.listLoading = false
+				}
+			}).catch(err => {
+				console.log(err);
+			})
+		},
+		handleSizeChange (val) {
+			this.limit = val
+			this.listLoading = true
+			Axios({
+				url: '/article/get_article_list',
+				method: 'get',
+				params: { limit: this.limit, page: this.page }
+			}).then(res => {
+				console.log(res);
+				if (res.code === 200) {
+					this.list = res.data.article_list
+					this.total = res.data.total
+					this.listLoading = false
+				} else {
+					Notification.error({
+						title: '失败',
+						message: '获取文章列表失败!'
+					})
+					this.listLoading = false
+				}
+			}).catch(err => {
+				console.log(err);
+			})
+		},
+		handleCurrentChange (val) {
+			this.page = val
+			this.listLoading = true
+			Axios({
+				url: '/article/get_article_list',
+				method: 'get',
+				params: { limit: this.limit, page: this.page }
+			}).then(res => {
+				console.log(res);
+				if (res.code === 200) {
+					this.list = res.data.article_list
+					this.total = res.data.total
+					this.listLoading = false
+				} else {
+					Notification.error({
+						title: '失败',
+						message: '获取文章列表失败!'
 					})
 					this.listLoading = false
 				}
@@ -359,33 +380,62 @@ export default {
 			this.detailForm = val
 			this.detailArticleVisible = true
 		},
-		editData (val) {
-			console.log(val);
-		},
 		deleteData (val) {
-			const id = val
+			const uuid = val
+			console.log(uuid);
 			Axios({
-				url: '/delete_article_data',
+				url: '/article/delete_article_data',
 				method: 'get',
-				params: { id }
+				params: { uuid }
 			}).then(res => {
 				console.log(res);
 				if (res.code === 200) {
-					this.$message({
-						message: '删除文章成功',
-						type: 'success',
-						showClose: true,
-						duration: 1000
+					Notification.success({
+						title: '成功',
+						message: '删除文章成功!'
 					})
 				} else {
-					this.$message({
-						message: '删除文章失败',
-						type: 'error',
-						showClose: true,
-						duration: 1000
+					Notification.error({
+						title: '失败',
+						message: '删除文章失败!'
 					})
 				}
 				this.getList()
+			}).catch(err => {
+				console.log(err);
+			})
+		},
+		submitDetailForm () {
+			console.log(this.detailForm);
+			if (this.detailForm.content.length === 0 || this.detailForm.title.length === 0) {
+				this.$message({
+					message: '请填写必要的标题和内容',
+					type: 'warning'
+				})
+				return
+			}
+			console.log(typeof (this.detailForm.timestamp));
+			Axios({
+				url: '/article/edit_article_data',
+				method: 'post',
+				data: JSON.stringify(this.detailForm)
+			}).then(res => {
+				console.log(res);
+				if (res.code === 200) {
+					Notification.success({
+						title: '成功',
+						message: '文章修改成功!'
+					})
+					this.detailArticleVisible = false
+				} else {
+					Notification.error({
+						title: '失败',
+						message: '文章修改失败!'
+					})
+					this.detailArticleVisible = false
+				}
+
+				this.getList();
 			}).catch(err => {
 				console.log(err);
 			})
@@ -446,5 +496,10 @@ export default {
 	.el-input {
 		width: 350px;
 	}
+}
+
+.el-pagination {
+	text-align: center;
+	margin-top: 15px;
 }
 </style>

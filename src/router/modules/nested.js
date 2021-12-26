@@ -9,7 +9,7 @@ const nestedRouter = {
     name: 'Nested',
     meta: {
         title: 'Nested Routes',
-        roles: ['admin'],
+        roles: ['super_admin'],
         icon: 'nested'
     },
     children: [{

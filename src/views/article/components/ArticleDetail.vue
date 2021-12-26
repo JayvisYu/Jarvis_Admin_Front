@@ -129,21 +129,33 @@
 			<!-- <CommentDropdown v-model="postForm.comment_disabled" />
 						<PlatformDropdown v-model="postForm.platforms" />
 						<SourceUrlDropdown v-model="postForm.source_uri" /> -->
-			<el-button
-				v-loading="loading"
-				type="warning"
-				@click="draftForm"
-			>
-				草稿
-			</el-button>
-			<el-button
-				v-loading="loading"
-				style="margin-left: 10px;"
-				type="success"
-				@click="submitForm"
-			>
-				发表
-			</el-button>
+			<template v-if="this.isEdit === false">
+				<el-button
+					v-loading="loading"
+					type="warning"
+					@click="draftForm"
+				>
+					设为草稿
+				</el-button>
+				<el-button
+					v-loading="loading"
+					style="margin-left: 10px;"
+					type="success"
+					@click="submitForm"
+				>
+					直接发表
+				</el-button>
+			</template>
+			<template v-else>
+				<el-button
+					v-loading="loading"
+					type="primary"
+					@click="submitEditForm"
+				>
+					提交修改
+				</el-button>
+			</template>
+
 		</sticky>
 	</div>
 </template>
@@ -156,9 +168,11 @@ import Sticky from '@/components/Sticky' // 粘性header组件
 import { validURL } from '@/utils/validate'
 import { fetchArticle } from '@/api/article'
 import { searchUser } from '@/api/remote-search'
+import { Notification } from 'element-ui'
 import Warning from './Warning'
 import { CommentDropdown, PlatformDropdown, SourceUrlDropdown } from './Dropdown'
 import { Axios } from '@/api/axios'
+import { debounce } from '@/utils/debounce'
 
 
 const defaultForm = {
@@ -170,6 +184,7 @@ const defaultForm = {
 	// image_uri: '', // 文章图片
 	display_time: undefined, // 前台展示时间
 	id: undefined,
+	uuid: undefined,
 	// platforms: ['a-platform'],
 	// comment_disabled: false,
 	importance: 0
@@ -243,20 +258,20 @@ export default {
 	},
 	created () {
 		if (this.isEdit) {
-			const id = this.$route.params && this.$route.params.id
-			console.log(id)
-			this.fetchEditData(id)
+			const uuid = this.$route.params && this.$route.params.uuid
+			console.log(uuid)
+			this.fetchEditData(uuid)
 		}
 		this.tempRoute = Object.assign({}, this.$route)
 	},
 	methods: {
-		fetchData (id) {
-			fetchArticle(id).then(response => {
+		fetchData (uuid) {
+			fetchArticle(uuid).then(response => {
 				this.postForm = response.data
 
 				// just for test
-				this.postForm.title += `   Article Id:${this.postForm.id}`
-				this.postForm.content_short += `   Article Id:${this.postForm.id}`
+				this.postForm.title += `   Article Id:${this.postForm.uuid}`
+				this.postForm.content_short += `   Article Id:${this.postForm.uuid}`
 
 				// set tagsview title
 				this.setTagsViewTitle()
@@ -268,23 +283,21 @@ export default {
 			})
 		},
 		// 获取修改文章信息
-		fetchEditData (id) {
+		fetchEditData (uuid) {
 			Axios({
-				url: '/get_detail_data',
+				url: '/article/get_detail_data',
 				method: 'get',
-				params: { id }
+				params: { uuid }
 			}).then(res => {
 				console.log(res);
 				if (res.code === 200) {
 					this.postForm = res.data.result_dict
-
 					// just for test
 					this.postForm.title = res.data.result_dict.title
 					this.postForm.content_short = res.data.result_dict.content_short
 					this.postForm.display_time = res.data.result_dict.timestamp
 					// set tagsview title
 					this.setTagsViewTitle()
-
 					// set page title
 					this.setPageTitle()
 				} else {
@@ -296,14 +309,15 @@ export default {
 		},
 		setTagsViewTitle () {
 			const title = 'Edit Article'
-			const route = Object.assign({}, this.tempRoute, { title: `${title}-${this.postForm.id}` })
+			const route = Object.assign({}, this.tempRoute, { title: `${title}-${this.postForm.uuid}` })
 			this.$store.dispatch('tagsView/updateVisitedView', route)
 		},
 		setPageTitle () {
 			const title = 'Edit Article'
-			document.title = `${title} - ${this.postForm.id}`
+			document.title = `${title} - ${this.postForm.uuid}`
 		},
-		submitForm () {
+		// 提交文章
+		submitForm2 () {
 			if (this.postForm.content.length === 0 || this.postForm.title.length === 0) {
 				this.$message({
 					message: '请填写必要的标题和内容',
@@ -313,24 +327,20 @@ export default {
 			}
 			this.postForm.status = 'published'
 			Axios({
-				url: '/post_article_form',
+				url: '/article/post_article_form',
 				method: 'post',
 				data: this.postForm
 			}).then(res => {
 				console.log(res);
 				if (res.code === 200) {
-					this.$message({
-						message: '保存成功',
-						type: 'success',
-						showClose: true,
-						duration: 1000
+					Notification.success({
+						title: '成功',
+						message: '文章提交成功!'
 					})
 				} else {
-					this.$message({
-						message: '保存失败, 请重试',
-						type: 'error',
-						showClose: true,
-						duration: 1000
+					Notification.error({
+						title: '失败',
+						message: '文章提交失败!'
 					})
 				}
 				this.postForm = Object.assign({}, defaultForm)
@@ -349,24 +359,20 @@ export default {
 			}
 			this.postForm.status = 'draft'
 			Axios({
-				url: '/post_article_form',
+				url: '/article/post_article_form',
 				method: 'post',
 				data: this.postForm
 			}).then(res => {
 				console.log(res);
 				if (res.code === 200) {
-					this.$message({
-						message: '保存成功',
-						type: 'success',
-						showClose: true,
-						duration: 1000
+					Notification.success({
+						title: '成功',
+						message: '文章提交成功!'
 					})
 				} else {
-					this.$message({
-						message: '保存失败, 请重试',
-						type: 'error',
-						showClose: true,
-						duration: 1000
+					Notification.error({
+						title: '失败',
+						message: '文章提交失败!'
 					})
 				}
 				this.postForm = Object.assign({}, defaultForm)
@@ -381,7 +387,43 @@ export default {
 				if (!response.data.items) return
 				this.userListOptions = response.data.items.map(v => v.name)
 			})
-		}
+		},
+		submitForm: debounce(function () {
+			if (this.postForm.content.length === 0 || this.postForm.title.length === 0) {
+				// this.$message({
+				// 	message: '请填写必要的标题和内容',
+				// 	type: 'warning'
+				// })
+				Notification.warning({
+					title: '失败',
+					message: '请填写必要的标题和内容!'
+				})
+				return
+			}
+			this.postForm.status = 'published'
+			Axios({
+				url: '/article/post_article_form',
+				method: 'post',
+				data: this.postForm
+			}).then(res => {
+				console.log(res);
+				if (res.code === 200) {
+					Notification.success({
+						title: '成功',
+						message: '文章提交成功!'
+					})
+				} else {
+					Notification.error({
+						title: '失败',
+						message: '文章提交失败!'
+					})
+				}
+				this.postForm = Object.assign({}, defaultForm)
+				this.$refs.editor.setContent("");
+			}).catch(err => {
+				console.log(err);
+			})
+		}, 2000)
 	}
 }
 </script>
